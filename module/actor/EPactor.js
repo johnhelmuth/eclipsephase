@@ -234,7 +234,7 @@ export default class EPactor extends Actor {
         else if (actorModel.health.physical.value > actorModel.physical.dr){
           actorModel.health.physical.value = actorModel.physical.dr
         }
-  
+
         this._calculatePools(actorModel, morph, chiMultiplier)
       }}
     
@@ -272,6 +272,8 @@ export default class EPactor extends Actor {
       }
     }
 
+    this._calculateInvertedResource(actorModel, "physical");
+
     actorModel.physical.relativeDurabilityContainer = durabilityContainerWidth
     actorModel.physical.relativeDeathContainer = deathContainerWidth
   }
@@ -305,6 +307,8 @@ export default class EPactor extends Actor {
     const currentDeathDamage = actorModel.health.insanity.value;
     const maxDeathDamage = actorModel.health.insanity.max;
     actorModel.mental.relativeInsanityDamage = Math.round(currentDeathDamage*100/maxDeathDamage) > 100 ? 100 : Math.round(currentDeathDamage*100/maxDeathDamage);
+
+    this._calculateInvertedResource(actorModel, "mental");
   }
 
   _calculatePools(actorModel, morph, chiMultiplier) {
@@ -680,6 +684,21 @@ export default class EPactor extends Actor {
       default:
         break;
     }
+  }
+
+  /**
+   * _calculateInvertedResource - Updates a resource that is inverted from another resource.
+   *
+   * This allows health bars that start full and decrease as damage is taken.
+   *
+   * @param {Actor} actorModel
+   * @param {String} resourceName
+   * @private
+   */
+  _calculateInvertedResource(actorModel, resourceName) {
+    const invertedName = resourceName + "Inverted";
+    actorModel.health[invertedName].max = actorModel.health[resourceName].max;
+    actorModel.health[invertedName].value = actorModel.health[resourceName].max - actorModel.health[resourceName].value;
   }
 }
 
