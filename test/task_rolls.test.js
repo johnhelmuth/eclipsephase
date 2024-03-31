@@ -1,25 +1,26 @@
 import * as dice from '../module/dice.js'
-import * as help from './helpers'
+import * as help from './helpers.js'
+import {expect} from 'chai';
 
 describe('Task Rolls', () => {
-  test('constructor', () => {
+  it('constructor', () => {
     let name = 'some task name'
     let value = 56
     let tr = new dice.TaskRoll(name, value)
 
-    expect(tr.taskName).toEqual(name)
-    expect(tr.baseValue).toEqual(value)
+    expect(tr.taskName).to.equal(name)
+    expect(tr.baseValue).to.equal(value)
   })
 
   describe('totalTargetNumber', () => {
-    test('with no mods', () => {
+    it('with no mods', () => {
       const targetNumber = help.randomSkillValue()
       let roll = new dice.TaskRoll('some task name', targetNumber)
 
-      expect(roll.totalTargetNumber).toEqual(targetNumber)
+      expect(roll.totalTargetNumber).to.equal(targetNumber)
     })
 
-    test('with mods', () => {
+    it('with mods', () => {
       const targetNumber = help.randomSkillValue()
       let roll = new dice.TaskRoll('some task name', targetNumber)
       let mods = [
@@ -32,7 +33,7 @@ describe('Task Rolls', () => {
       for(let mod of mods)
         roll.addModifier(new dice.TaskRollModifier('modifier', mod))
 
-      expect(roll.totalTargetNumber).toEqual(targetNumber + totalMods)
+      expect(roll.totalTargetNumber).to.equal(targetNumber + totalMods)
     })
   })
 
@@ -44,28 +45,28 @@ describe('Task Rolls', () => {
         roll = new dice.TaskRoll('some task name', 70)
       })
 
-      test('critical success', () => {
+      it('critical success', () => {
         roll._rollValue = 33
         roll._calculateResult()
-        expect(roll.result).toEqual(dice.TASK_RESULT.CRITICAL_SUCCESS)
+        expect(roll.result).to.equal(dice.TASK_RESULT.CRITICAL_SUCCESS)
       })
 
-      test('two degrees of success', () => {
+      it('two degrees of success', () => {
         roll._rollValue = 67
         roll._calculateResult()
-        expect(roll.result).toEqual(dice.TASK_RESULT.SUCCESS_TWO)
+        expect(roll.result).to.equal(dice.TASK_RESULT.SUCCESS_TWO)
       })
 
-      test('one degree of success', () => {
+      it('one degree of success', () => {
         roll._rollValue = 41
         roll._calculateResult()
-        expect(roll.result).toEqual(dice.TASK_RESULT.SUCCESS_ONE)
+        expect(roll.result).to.equal(dice.TASK_RESULT.SUCCESS_ONE)
       })
 
-      test('regular  success', () => {
+      it('regular  success', () => {
         roll._rollValue = 29 
         roll._calculateResult()
-        expect(roll.result).toEqual(dice.TASK_RESULT.SUCCESS)
+        expect(roll.result).to.equal(dice.TASK_RESULT.SUCCESS)
       })
     })
 
@@ -76,28 +77,28 @@ describe('Task Rolls', () => {
         roll = new dice.TaskRoll('some task name', 15)
       })
 
-      test('critical falure', () => {
+      it('critical falure', () => {
         roll._rollValue = 55
         roll._calculateResult()
-        expect(roll.result).toEqual(dice.TASK_RESULT.CRITICAL_FAILURE)
+        expect(roll.result).to.equal(dice.TASK_RESULT.CRITICAL_FAILURE)
       })
 
-      test('two degrees of falure', () => {
+      it('two degrees of falure', () => {
         roll._rollValue = 29
         roll._calculateResult()
-        expect(roll.result).toEqual(dice.TASK_RESULT.FAILURE_TWO)
+        expect(roll.result).to.equal(dice.TASK_RESULT.FAILURE_TWO)
       })
 
-      test('one degree of falure', () => {
+      it('one degree of falure', () => {
         roll._rollValue = 41
         roll._calculateResult()
-        expect(roll.result).toEqual(dice.TASK_RESULT.FAILURE_ONE)
+        expect(roll.result).to.equal(dice.TASK_RESULT.FAILURE_ONE)
       })
 
-      test('regular  falure', () => {
+      it('regular  falure', () => {
         roll._rollValue = 29
         roll._calculateResult()
-        expect(roll.result).toEqual(dice.TASK_RESULT.FAILURE_TWO)
+        expect(roll.result).to.equal(dice.TASK_RESULT.FAILURE_TWO)
       })
     })
   })
@@ -105,32 +106,32 @@ describe('Task Rolls', () => {
 
 
 describe('Task roll modifiers', () => {
-  test('constructor', () => {
+  it('constructor', () => {
     let text = 'some descriptive text'
     let value = 2
 
     let mod = new dice.TaskRollModifier(text, value)
 
-    expect(mod.text).toEqual(text)
-    expect(mod.value).toEqual(value)
+    expect(mod.text).to.equal(text)
+    expect(mod.value).to.equal(value)
 
   })
 
   describe('Helpers', () => {
     describe('formattedValue', () => {
-      test('positive value', () => {
+      it('positive value', () => {
         let trm = new dice.TaskRollModifier('some modifier', 10)
-        expect(trm.formattedValue).toEqual('+10')
+        expect(trm.formattedValue).to.equal('+10')
       })
 
-      test('negative value', () => {
+      it('negative value', () => {
         let trm = new dice.TaskRollModifier('some modifier', -10)
-        expect(trm.formattedValue).toEqual('-10')
+        expect(trm.formattedValue).to.equal('-10')
       })
 
-      test('zero value', () => {
+      it('zero value', () => {
         let trm = new dice.TaskRollModifier('some modifier', 0)
-        expect(trm.formattedValue).toEqual('0')
+        expect(trm.formattedValue).to.equal('0')
       })
     })
   })

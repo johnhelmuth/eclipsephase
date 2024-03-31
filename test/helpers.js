@@ -1,12 +1,12 @@
 
-import * as faker  from 'faker'
+import {faker} from '@faker-js/faker'
 
 export function randomSkillValue(min = 0) {
-  return faker.datatype.number({min: min, max: 100})
+  return faker.number.int({min: min, max: 100})
 }
 
 
 export function randomRollMod() {
-  return faker.datatype.number({min: -30, max: 30})
+  return faker.number.int({min: -30, max: 30})
 }
 

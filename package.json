@@ -2,26 +2,31 @@
   "name": "eclipsephase",
   "version": "0.4.9.4",
   "description": "Eclipse Phase system for Foundry VTT",
+  "type": "module",
   "scripts": {
-    "test": "jest test/"
+    "test": "mocha"
   },
   "author": "John Doe",
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "chromedriver": "^122.0.4",
+    "selenium-webdriver": "^4.18.1"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",
     "@babel/node": "^7.14.2",
     "@babel/preset-env": "^7.14.4",
+    "@faker-js/faker": "^8.4.1",
     "babel-jest": "^27.0.2",
-    "jest": "^27.0.4"
+    "chai": "^5.1.0",
+    "mocha": "^10.3.0"
   },
-
   "babel": {
     "presets": [
       [
-        "@babel/preset-env", {
+        "@babel/preset-env",
+        {
           "targets": {
             "node": "current"
           }
