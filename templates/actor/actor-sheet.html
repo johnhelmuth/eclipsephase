@@ -59,93 +59,42 @@
                                         <h3 class="subheader">{{localize "ep2e.morph.currentMorph.headline"}}</h3>
                                         <div class="alignRight flexGrowThreeQuarter">
                                             <label class="resource-value" style="margin-right: 0.5em;">{{localize "ep2e.morph.currentMorph.sleevedLabel"}}</label>
-                                            <select class="bodySelect" name="system.bodies.activeMorph" data-type="text" style="width: 120px;">
-                                                {{#select actor.system.bodies.activeMorph}}
-                                                <option value="morph1">{{#if
-                                                actor.system.bodies.morph1.name}}{{actor.system.bodies.morph1.name}}{{else}}{{localize "ep2e.morph.currentMorph.morphList.placeholder"}}{{/if}}</option>
-                                                <option value="morph2">{{#if
-                                                actor.system.bodies.morph2.name}}{{actor.system.bodies.morph2.name}}{{else}}{{localize "ep2e.morph.currentMorph.morphList.placeholder"}}{{/if}}</option>
-                                                <option value="morph3">{{#if
-                                                actor.system.bodies.morph3.name}}{{actor.system.bodies.morph3.name}}{{else}}{{localize "ep2e.morph.currentMorph.morphList.placeholder"}}{{/if}}</option>
-                                                <option value="morph4">{{#if
-                                                actor.system.bodies.morph4.name}}{{actor.system.bodies.morph4.name}}{{else}}{{localize "ep2e.morph.currentMorph.morphList.placeholder"}}{{/if}}</option>
-                                                <option value="morph5">{{#if
-                                                actor.system.bodies.morph5.name}}{{actor.system.bodies.morph5.name}}{{else}}{{localize "ep2e.morph.currentMorph.morphList.placeholder"}}{{/if}}</option>
-                                                <option value="morph6">{{#if
-                                                actor.system.bodies.morph6.name}}{{actor.system.bodies.morph6.name}}{{else}}{{localize "ep2e.morph.currentMorph.morphList.placeholder"}}{{/if}}</option>
+                                            <select class="bodySelect" name="actor.activeMorphId" data-type="text" style="width: 120px;">
+                                                {{#select actor.activeMorphId}}
+                                                    {{#each actor.morphs as |morph|}}
+                                                        <option value="{{ morph._id }}">
+                                                            {{#if morph.name}}{{morph.name}}{{else}}{{localize "ep2e.morph.currentMorph.morphList.placeholder"}}{{/if}}</option>
+                                                    {{/each}}
                                                 {{/select}}
                                             </select>
                                         </div>
                                     </div>
 
-                                    {{> systems/eclipsephase/templates/actor/partials/morph-details.html 
-                                        name=actor.system.bodies.activeMorph
-                                        morph=activeMorph }}
+                                    {{> systems/eclipsephase/templates/actor/partials/morph-details.html
+                                        morph=actor.activeMorph }}
                                 </div>
                             </div>
-                                <img class="morph-img" src="{{activeMorph.morph.img}}" data-edit="system.bodies.{{activeMorph.key}}.img" title="{{actor.name}}'s {{activeMorph.name}}"/>
+                                {{log "actor-sheet.html actor.activeMorph" actor.activeMorph}}
+                                <img class="morph-img" src="{{actor.activeMorph.img}}" data-edit="activeMorph.img" title="{{actor.name}}'s {{actor.activeMorph.name}}"/>
                             </div>
                             <div>
                                 {{> systems/eclipsephase/templates/actor/partials/morph-traits.html
-                                    name=actor.system.bodies.activeMorph
-                                    morph=activeMorph }}
+                                    morph=actor.activeMorph }}
                             </div>
                             <div class="flexrow subheader">
                                 <h3 class="subheader">
-                                    {{actor.name}}'s {{activeMorph.name}}
+                                    {{actor.name}}'s {{actor.activeMorph.name}}
                                 </h3>
                                 <div class="alignRight flexGrowHalf">
                                 </div>
                             </div>
-                            {{#if (eq activeMorph.key "morph1")}}
                             {{editor
-                            activeMorph.description
-                            target="system.bodies.morph1.description"
-                            button=true
-                            owner=owner
-                            editable=this.options.editable
+                                actor.activeMorph.description
+                                target="activeMorph.description"
+                                button=true
+                                owner=owner
+                                editable=this.options.editable
                             }}
-                            {{else if (eq activeMorph.key "morph2")}}
-                            {{editor
-                            activeMorph.description
-                            target="system.bodies.morph2.description"
-                            button=true
-                            owner=owner
-                            editable=this.options.editable
-                            }}
-                            {{else if (eq activeMorph.key "morph3")}}
-                            {{editor
-                            activeMorph.description
-                            target="system.bodies.morph3.description"
-                            button=true
-                            owner=owner
-                            editable=this.options.editable
-                            }}
-                            {{else if (eq activeMorph.key "morph4")}}
-                            {{editor
-                            activeMorph.description
-                            target="system.bodies.morph4.description"
-                            button=true
-                            owner=owner
-                            editable=this.options.editable
-                            }}
-                            {{else if (eq activeMorph.key "morph5")}}
-                            {{editor
-                            activeMorph.description
-                            target="system.bodies.morph5.description"
-                            button=true
-                            owner=owner
-                            editable=this.options.editable
-                            }}
-                            {{else if (eq activeMorph.key "morph6")}}
-                            {{editor
-                            activeMorph.description
-                            target="system.bodies.morph6.description"
-                            button=true
-                            owner=owner
-                            editable=this.options.editable
-                            }}
-                            {{/if}}
                         </div>
                     
                     {{!-- Peripherals Tab --}}

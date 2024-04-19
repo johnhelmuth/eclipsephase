@@ -1,0 +1,33 @@
+
+{{log "item-partials/morphs.html" item._id actor }}
+{{#if (eq item._id actor.activeMorphId) }}
+<div class="item flexrow flex-group-center atHand reveal" data-item-id="{{item._id}}" data-item-name="{{item.name}}">
+{{else}}
+<div class="item flexrow flex-group-center offHand reveal" data-item-id="{{item._id}}" data-item-name="{{item.name}}">
+{{/if}}
+  {{log "item-partials/morphs.html" item }}
+  {{log "item-partials/morphs.html" item.img }}
+  <div class="flexrow flex-group-center input-small">
+    <img src="{{item.img}}" title="{{item.name}}" class="item-image flex-group-left input-small icon-small"/>
+  </div>
+  <div class="flexrow input-XL alignLeft wantToKnowMore">
+    <label class="input-XL truncate alignLeft">{{item.name}}</label>
+    <label class="tooltipText" style="min-width: 190px; left: -5px">{{item.name}}</label>
+  </div>
+  <div class="flexrow alignLeft">
+    <label class="input-XL truncate alignLeft">{{item.system.bodyTypeLabel}}</label>
+  </div>
+  <div class="flexrow item-controls flex-group-right" style="max-width: 50px;">
+    <a class="item-control item-delete resource-label editWithLabel input-xs alignRight" title="Delete Item"><i class="far fa-times-circle awesomeIcon"></i></a>
+    <a class="item-control item-edit resource-label editWithLabel  input-xs alignRight" title="Edit Item"><i class="far fa-edit awesomeIcon"></i></a>
+  </div>
+  <div class="flex-group-right slideShow input-xs">
+    <a class="showFlex"><i class="fas fa-plus icon-small awesomeIcon"></i></a>
+    <a class="noShow"><i class="fas fa-minus icon-small awesomeIcon"></i></a>
+  </div>
+  <div class="showMore descriptionContainer">
+    <div class="flexrow alignCenter" style="min-width: 100%; min-height: 25px; background-color: var(--focusBackground);">
+      TODO Add details of morph here.
+    </div>
+  </div>
+</div>

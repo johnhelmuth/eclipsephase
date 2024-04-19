@@ -800,40 +800,7 @@
         "long": false,
         "restValue": null
       },
-      "bodies": {
-        "activeMorph": "morph1",
-        "allMorphs": [],
-        "morph1": {
-          "templates": [
-            "morph"
-          ]
-        },
-        "morph2": {
-          "templates": [
-            "morph"
-          ]
-        },
-        "morph3": {
-          "templates": [
-            "morph"
-          ]
-        },
-        "morph4": {
-          "templates": [
-            "morph"
-          ]
-        },
-        "morph5": {
-          "templates": [
-            "morph"
-          ]
-        },
-        "morph6": {
-          "templates": [
-            "morph"
-          ]
-        }
-      },    
+      "activeMorphId": "",
       "psiStrain": {
         "name": "",
         "strainType": 0,
@@ -1028,6 +995,7 @@
   },
   "Item": { 
     "types": [
+      "morph",
       "gear",
       "rangedWeapon",
       "ccWeapon",

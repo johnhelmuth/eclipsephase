@@ -5,7 +5,6 @@ import { traitAndAccessoryFinder } from "../common/sheet-preparation.js";
 import * as Dice from "../dice.js";
 import itemRoll from "../item/EPitem.js";
 
-
 /**
  * Extend the basic ActorSheet with some very simple modifications
  * @extends {ActorSheet}
@@ -32,6 +31,7 @@ export default class EPactorSheet extends ActorSheet {
     }
 
     static get defaultOptions() {
+      console.log('EPactorSheet.defaultOptions()');
       return mergeObject(super.defaultOptions, {
         classes: ["eclipsephase", "sheet", "actor"],
         resizable: false,
@@ -56,9 +56,42 @@ export default class EPactorSheet extends ActorSheet {
     }
   }
 
+  async ensureActorHasMorph(actor) {
+
+    console.log('EPactorSheet.ensureActorHasMorph() called. actor.hasMorph: ', actor.hasMorph());
+    console.log('EPactorSheet.ensureActorHasMorph() actor.system.activeMorphId: ', actor.system.activeMorphId);
+    if (actor.hasMorph()) {
+      return;
+    }
+
+    // TODO: Make this apply to all actor types.
+    if (actor.type === 'character') {
+      let morph;
+      if (actor.morphs.length < 1) {
+        morph = await actor.createMorph();
+        console.log('EPactorSheet.ensureActorHasMorph() morph: ', morph);
+      } else {
+        morph = actor.morphs[0];
+      }
+      if (! morph) {
+        console.log('EPactorSheet.ensureActorHasMorph() Could not create morph and no morphs on actor.');
+        throw new Error('Could not create morph and no morphs on actor.');
+      }
+      await actor.update({'system.activeMorphId': morph._id}, {render: true});
+      console.log('EPactorSheet.ensureActorHasMorph() after actor update: actor.system.activeMorphId: ', actor.system.activeMorphId);
+      console.log('EPactorSheet.ensureActorHasMorph() after actor update: actor.activeMorph ', actor.activeMorph);
+    }
+
+  }
+
   async getData() {
     const sheetData = super.getData();
     const actor = sheetData.actor;
+    console.log('EPactorSheet.getData() sheetData.actor: ', sheetData.actor);
+
+    console.log('EPactorSheet.getData() calling ensureActorHasMorph()');
+    await this.ensureActorHasMorph(actor);
+    console.log('EPactorSheet.getData() returned from ensureActorHasMorph() call.');
 
     if(actor.system.mods.woundMultiplier < 1){
       actor.update({"system.mods.woundMultiplier" : 1});
@@ -66,16 +99,20 @@ export default class EPactorSheet extends ActorSheet {
 
     sheetData.dtypes = ["String", "Number", "Boolean"];
     // Prepare items.
+    // TODO Use static getDefaultArtwork() to do this.
     if(actor.img === "icons/svg/mystery-man.svg"){
       actor.img = "systems/eclipsephase/resources/img/anObjectificationByMichaelSilverRIP.jpg";
     }
 
-    eclipsephase.morphNames.forEach(name => {
-      if(actor.system.bodies[name].img === ""){
-        actor.system.bodies[name].img = "systems/eclipsephase/resources/img/anObjectificationByMichaelSilverRIP.jpg";
-      }
-    })
-
+    // TODO Remove this when the npc/goon morph data structures are updated to use morph items.
+    // This image path should be set in the EPmorphModel object.
+    if (actor.type !== 'character') {
+      eclipsephase.morphNames.forEach(name => {
+        if(actor.system.bodies[name].img === ""){
+          actor.system.bodies[name].img = "systems/eclipsephase/resources/img/anObjectificationByMichaelSilverRIP.jpg";
+        }
+      })
+    }
     if (actor.type === 'character') {
       this._prepareCharacterItems(sheetData);
     }
@@ -85,22 +122,31 @@ export default class EPactorSheet extends ActorSheet {
     //Prepare dropdowns
     sheetData.config = CONFIG.eclipsephase;
 
-    // Why jump through hoops in the template when we can set the active morph
-    // here?!
-    let morphKey = actor.system.bodies.activeMorph
-    let description = await TextEditor.enrichHTML(actor.system.bodies[morphKey].description,
-      { async: true })
+    // TODO Rework this when the npc/goon morph data structures are updated to use morph items, AND when morph traits/flaws/wares are refactored.
+    if (actor.type !== 'character') {
+      // Why jump through hoops in the template when we can set the active morph
+      // here?!
+      let morphKey = actor.system.bodies.activeMorph
+      let description = await TextEditor.enrichHTML(actor.system.bodies[morphKey].description,
+        { async: true })
 
-    sheetData.activeMorph = {
-      key: morphKey,
-      name: actor.system.bodies[morphKey].name || "New Morph",
-      morph: actor.system.bodies[morphKey],
-      wares: actor.ware[morphKey],
-      traits: actor.morphTrait[morphKey],
-      presentTraits: actor.morphTrait[morphKey].length + actor.morphFlaw[morphKey].length > 0,
-      flaws: actor.morphFlaw[morphKey],
-      description: description
+      sheetData.activeMorph = {
+        key: morphKey,
+        name: actor.system.bodies[morphKey].name || "New Morph",
+        morph: actor.system.bodies[morphKey],
+        wares: actor.ware[morphKey],
+        traits: actor.morphTrait[morphKey],
+        presentTraits: actor.morphTrait[morphKey].length + actor.morphFlaw[morphKey].length > 0,
+        flaws: actor.morphFlaw[morphKey],
+        description: description
+      }
+    } else if (actor.hasMorph()) {
+      sheetData.activeMorph = actor.activeMorph;
+    } else {
+      throw new Error("EPactorSheet.getData() we shouldn't have reach this part, something went wrong in ensureActorHasMorph().");
     }
+
+    console.log('EPactorSheet.getData() sheetData: ', sheetData);
 
     return mergeObject(sheetData, {
       isGM: game.user.isGM
@@ -113,12 +159,11 @@ export default class EPactorSheet extends ActorSheet {
     const actorModel = actor.system
     const itemModel = item.system
     
-    let currentMorph = actorModel.bodies.activeMorph
+    let activeMorphId = actorModel.activeMorphId;
 
-
-    // Create a Consumable spell scroll on the Inventory tab
+    // Bind the trait/flaw/ware to the active morph.
     if (item.type === "morphFlaw" || item.type === "morphTrait" || item.type === "ware") {
-      itemModel.boundTo = currentMorph
+      itemModel.boundTo = activeMorphId
     }
 
     //Loading weapons with Standard Ammo
@@ -653,7 +698,15 @@ export default class EPactorSheet extends ActorSheet {
     registerCommonHandlers(html, actor);
    /* registerItemHandlers(html,this.actor,this);*/
 
-    
+
+    // Add new morph
+    html.find('.morph-create').click(async (event) => {
+      event.preventDefault();
+      console.log('EPactorSheet.activateListeners() .morph-create click handler. event: ', event);
+      const morph = await this.actor.createMorph();
+      console.log('EPactorSheet.activateListeners() .morph-create click handler this.actor.items: ', this.actor.items);
+      morph.sheet.render(true);
+    });
 
     // Add Custom Skill Item
     html.find('.item-create').click(this._onItemCreate.bind(this));
@@ -669,8 +722,26 @@ export default class EPactorSheet extends ActorSheet {
     html.find('.item-delete').click(async ev => {
       let askForOptions = ev.shiftKey;
 
+      const li = $(ev.currentTarget).parents(".item");
+      const itemId = li.data("itemId") ?? null;
+      console.log('EPactorSheet.activeListeners() item-delete click handler: li: ', li);
+      console.log('EPactorSheet.activeListeners() item-delete click handler: itemId: ', itemId);
+      console.log('EPactorSheet.activeListeners() item-delete click handler: actor: ', actor);
+      console.log('EPactorSheet.activeListeners() item-delete click handler: actor.system.activeMorphId: ', actor.system.activeMorphId);
+      if (itemId === actor.activeMorphId) {
+        const confirmLabel = game.i18n.localize("ep2e.actorSheet.button.confirm");
+        return Dialog.prompt({
+          title: game.i18n.localize("ep2e.actorSheet.dialogHeadline.connotDeleteActiveMorph"),
+          content: [
+            game.i18n.localize("ep2e.actorSheet.popUp.cannotDeleteActiveMorphCopy"),
+            game.i18n.localize("ep2e.actorSheet.popUp.cannotDeleteActiveMorphAdditionalInfo"),
+            ].join(''),
+          label: confirmLabel,
+          rejectClose: false,
+        });
+      }
+
       if (!askForOptions){
-        const li = $(ev.currentTarget).parents(".item");
         const itemName = [li.data("itemName")] ? [li.data("itemName")] : null;
         const popUpTitle = game.i18n.localize("ep2e.actorSheet.dialogHeadline.confirmationNeeded");
         const popUpHeadline = (game.i18n.localize("ep2e.actorSheet.button.delete"))+ " " +(itemName?itemName:"");
@@ -1007,7 +1078,7 @@ export default class EPactorSheet extends ActorSheet {
     let actor = this.actor
     let allEffects = this.object.effects
 
-    let currentMorph = event.currentTarget.value;
+    let newMorphId = event.currentTarget.value;
     
     //browses through ALL effects and identifies, whether they are bound to an item or not
     for (let effectScan of allEffects){
@@ -1025,7 +1096,7 @@ export default class EPactorSheet extends ActorSheet {
           let effUpdateData=[];
 
           //If a found item is bound to the currently active morph it gets prepared to be activated
-          if (parentItem.system.boundTo === currentMorph) {
+          if (parentItem.system.boundTo === newMorphId) {
             effUpdateData.push({
               "_id" : effectScan._id,
               disabled: false
@@ -1043,6 +1114,8 @@ export default class EPactorSheet extends ActorSheet {
         }
       }   
     }
+    await this.actor.switchMorph(newMorphId);
+    this.render(true);
   }
 
   _onItemCreate(event) {

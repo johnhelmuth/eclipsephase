@@ -1,5 +1,6 @@
 // Import Modules
 // const util = require('util');
+console.log('Eclipse Phase Game System eclipsephase.js loaded and executing.');
 import * as EPchat from "./chat.js";
 import  EPactor from "./actor/EPactor.js";
 import  EPitem  from "./item/EPitem.js";
@@ -14,10 +15,18 @@ import  EPaspectSheet  from "./item/EPaspectSheet.js";
 import  EPprogramSheet  from "./item/EPprogramSheet.js";
 import  EPspecialSkillSheet  from "./item/EPspecialSkillSheet.js";
 import  EPknowSkillSheet  from "./item/EPknowSkillSheet.js";
+import  EPmorphSheet  from "./item/EPmorphSheet.js";
 import  EPmorphTraitSheet  from "./item/EPmorphTraitSheet.js";
 import  EPmorphFlawSheet from "./item/EPmorphFlawSheet.js";
 import  EPvehicleSheet  from "./item/EPvehicleSheet.js";
+import { dataModels } from './data/item/_module.js';
+
+
+console.log('Eclipse Phase Game System eclipsephase.js Finished imports, loading config.');
+
 import  { eclipsephase } from "./config.js";
+console.log('Eclipse Phase Game System eclipsephase.js config loaded. eclipsephase: ', eclipsephase);
+
 import  { migrationLegacy, migrationPre0861,  migrationPre09, migrationPre093, migrationPre095, migrationPre098, migrationPre0985, migrationPre0992} from "./common/migration.js";
 
 function registerSystemSettings() {
@@ -149,6 +158,14 @@ Hooks.once('init', async function() {
   CONFIG.eclipsephase = eclipsephase;
   CONFIG.Item.documentClass = EPitem;
 
+  // Register custom DataModel classes
+  console.log('Eclipse Phase Game System Registering sub-type data models.');
+  for(const [docType, subTypeModels] of Object.entries(dataModels)) {
+    Object.assign(CONFIG[docType].dataModels, subTypeModels);
+  }
+  console.log('Eclipse Phase Game System CONFIG.Item: ', CONFIG.Item);
+  console.log('Eclipse Phase Game System CONFIG.Item.dataModels: ', CONFIG.Item.dataModels);
+
   // Register sheet application classes
   Actors.unregisterSheet("core", ActorSheet);
   Actors.registerSheet("eclipsephase", EPactorSheet, {types: ["character"], makeDefault: true });
@@ -156,6 +173,7 @@ Hooks.once('init', async function() {
   Actors.registerSheet("eclipsephase", EPgoonSheet, {types: ["goon"], makeDefault: true });
   Items.unregisterSheet("core", ItemSheet);
   Items.registerSheet("eclipsephase", EPgearSheet, {types: ["gear","ccWeapon","grenade","armor","ware","drug","rangedWeapon","ammo"], makeDefault: true });
+  Items.registerSheet("eclipsephase", EPmorphSheet, {types: ["morph"], makeDefault: true });
   Items.registerSheet("eclipsephase", EPmorphTraitSheet, {types: ["morphTrait","trait","flaw","morphFlaw"], makeDefault: true });
   Items.registerSheet("eclipsephase", EPaspectSheet, {types: ["aspect"], makeDefault: true});
   Items.registerSheet("eclipsephase", EPprogramSheet, {types: ["program"], makeDefault: true });
@@ -177,8 +195,6 @@ Hooks.once('init', async function() {
   var templates = [
     "systems/eclipsephase/templates/actor/partials/headerblock.html",
     "systems/eclipsephase/templates/actor/partials/health-bar.html",
-    "systems/eclipsephase/templates/actor/partials/morph-details.html",
-    "systems/eclipsephase/templates/actor/partials/morph-traits.html",
     "systems/eclipsephase/templates/actor/partials/tabs/vehicles-tab.html",
     "systems/eclipsephase/templates/actor/partials/tabs/skills.html",
     "systems/eclipsephase/templates/actor/partials/tabs/npcgear.html",
@@ -203,9 +219,12 @@ Hooks.once('init', async function() {
     "systems/eclipsephase/templates/actor/partials/item-partials/chi-sleight.html",
     "systems/eclipsephase/templates/actor/partials/item-partials/traitsAndFlaws.html",
     "systems/eclipsephase/templates/actor/partials/item-partials/vehicles.html",
+    "systems/eclipsephase/templates/actor/partials/item-partials/morphs.html",
     "systems/eclipsephase/templates/chat/partials/general-modifiers.html",
     "systems/eclipsephase/templates/item/partials/weapon-mode.html",
     "systems/eclipsephase/templates/item/partials/grenade-details.html",
+    "systems/eclipsephase/templates/actor/partials/morph-details.html",
+    "systems/eclipsephase/templates/actor/partials/morph-traits.html",
     "systems/eclipsephase/templates/item/partials/item-traits.html"
   ];
   await loadTemplates(templates);

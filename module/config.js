@@ -381,3 +381,9 @@ eclipsephase.psiStrainLabels = {
     enhancedBehaviour: "ep2e.psi.effect.enhancedBehaviour.label",
     restrictedBehaviour: "ep2e.psi.effect.restrictedBehaviour.label"
 }
+
+eclipsephase.itemsDefaultArtwork = {
+    morph: 'systems/eclipsephase/resources/img/anObjectificationByMichaelSilverRIP.jpg',
+    morphFlaw: 'systems/eclipsephase/resources/icons/add.png',
+    morphTrait: 'systems/eclipsephase/resources/icons/subtract.png'
+}

@@ -1,4 +1,4 @@
-import { eclipsephase } from "../config.js"
+import {eclipsephase} from "../config.js"
 
 /**
  * Extend the base Actor entity by defining a custom roll data structure which is ideal for the Simple system.
@@ -24,7 +24,19 @@ export default class EPactor extends Actor {
     { skill: "psi", aptitude: "wil", multiplier: 1, category: "moxie" },
     { skill: "research", aptitude: "int", multiplier: 1, category: "insight" },
     { skill: "survival", aptitude: "int", multiplier: 1, category: "insight" },
-  ]
+  ];
+
+  /**
+   * EPitem object for the actor's active Morph
+   *
+   * {EPitem}
+   */
+  _activeMorph;
+
+  /**
+   * ID of actor's active Morph object.
+   */
+  _activeMorphId;
 
   /**
    * Augment the basic actor data with additional dynamic data.
@@ -32,6 +44,7 @@ export default class EPactor extends Actor {
   async prepareData() {
     super.prepareData();
     const actor = this;
+    this._activeMorphId = this.system?.activeMorphId || ''; // Should only be '' between when a new actor is created and when the sheet.getData() method is called.
     const actorModel = this.system;
     const actorWhole = this;
     const flags = actorModel.flags;
@@ -58,10 +71,14 @@ export default class EPactor extends Actor {
     }
     
     //Determin whether any gear is present
-    for(let gearCheck of items){
-      if(gearCheck.system.displayCategory === "ranged" || gearCheck.system.displayCategory === "ccweapon" || gearCheck.system.displayCategory === "gear" || gearCheck.system.displayCategory === "armor" || gearCheck.system.slotType === "consumable" || gearCheck.system.slotType === "digital"){
-        actorModel.additionalSystems.hasGear = true;
-        break;
+    if (this.hasMorph()) {
+      actorModel.additionalSystems.hasGear = true;
+    } else {
+      for(let gearCheck of items){
+        if(gearCheck.system.displayCategory === "ranged" || gearCheck.system.displayCategory === "ccweapon" || gearCheck.system.displayCategory === "gear" || gearCheck.system.displayCategory === "armor" || gearCheck.system.slotType === "consumable" || gearCheck.system.slotType === "digital"){
+          actorModel.additionalSystems.hasGear = true;
+          break;
+        }
       }
     }
 
@@ -87,13 +104,26 @@ export default class EPactor extends Actor {
       }
     }
 
-    this._calculatePhysicalHealth(actorModel, chiMultiplier);
+    let morph;
+    let morphData;
+
+    /** TODO refactor npcs and goons to have embedded morph items, then remove the following snippet. **/
+    if (['npc','goon'].includes(this.type)) {
+      morphData = this.system.bodies.morph1;
+    } else {
+      console.log('EPactor.prepareData() calling this.activeMorph()')
+      morph = this.activeMorph;
+      morphData = morph?.system ?? {};
+    }
+    console.log('EPactor.prepareData() morph: ', morph);
+    console.log('EPactor.prepareData() morphData: ', morphData);
+    this._calculatePhysicalHealth(actorModel, morphData, chiMultiplier);
     this._calculateArmor(actorModel, actorWhole);
     this._calculateInitiative(actorModel, chiMultiplier);
 
-    if (this.type === "character"){    
-      let morph = actorModel.bodies[actorModel.bodies.activeMorph]
-      actorModel.additionalSystems.movementBase = morph.movement1 ? morph.movement1.base : 0;
+    actorModel.additionalSystems.movementBase = morphData?.movement1 ? morphData.movement1.base : 0;
+    console.log('EPactor.prepareData() actorModel.additionalSystems.movementBase: ', actorModel.additionalSystems.movementBase);
+    if (this.type === "character"){
       this._calculateMentalHealth(actorModel, chiMultiplier)
       this._calculateHomebrewEncumberance(actorModel);
       this._calculateSideCart(actorModel, items);
@@ -104,7 +134,6 @@ export default class EPactor extends Actor {
       this._minimumInfection(actorModel, gammaCount, chiCount);
     }
     if (this.type === "npc" || this.type === "goon"){
-      actorModel.additionalSystems.movementBase = actorModel.bodies.morph1.movement1 ? actorModel.bodies.morph1.movement1.base : 0;
     }
 
     // Aptitudes
@@ -171,6 +200,173 @@ export default class EPactor extends Actor {
   }
 
   /**
+   * Getter for the active Morph Id.
+   *
+   * Using a getter here helps to ensure that `this.activeMorphId` isn't changed except when `this.system.activeMorphId` is changed.
+   *
+   * @returns {String}
+   */
+  get activeMorphId() {
+    console.log('EPactor.activeMorphId: this.system.activeMorphId: ', this.system.activeMorphId)
+    console.log('EPactor.activeMorphId: this._activeMorphId: ', this._activeMorphId)
+    if (this.system.activeMorphId !== this._activeMorphId) {
+      this._activeMorphId = this.system.activeMorphId;
+    }
+    return this._activeMorphId;
+  }
+
+  /**
+   * Getter for the active Morph EPItem.
+   *
+   * @returns {EPitem|undefined}
+   */
+  get activeMorph() {
+    console.log('EPactor activeMorph() this._activeMorphId: ', this._activeMorphId);
+    console.log('EPactor activeMorph() this.system.activeMorphId: ', this.system.activeMorphId);
+    console.log('EPactor activeMorph() this._activeMorph: ', this._activeMorph);
+    console.log('EPactor activeMorph() this._activeMorph?._id: ', this._activeMorph?._id);
+
+    if (this._activeMorphId && (! this._activeMorph || this._activeMorph?._id !== this._activeMorphId)) {
+      console.log('EPactor activeMorph() out of sync, looking up this._activeMorphId morph.');
+      this._activeMorph = this.getMorphById(this._activeMorphId);
+    }
+
+    console.log('EPactor activeMorph() this._activeMorph: ', this._activeMorph);
+    return this._activeMorph;
+  }
+
+  /**
+   * Gets an EPitem of type "morph" from the actors inventory, by ID.
+   *
+   * @param {String} morphId - the _id property of the morph to get.
+   *
+   * @returns {EPitem|undefined}
+   */
+  getMorphById(morphId) {
+    const morph = this.items.find((item) => (item.type === "morph" && item._id === morphId));
+    console.log('EPactor.getMorphById() morphId: ', morphId);
+    console.log('EPactor.getMorphById() morph: ', morph);
+    return morph;
+  }
+
+  /**
+   * Getter for the list of EPitems of type "morph".
+   *
+   * @returns {EPitem[]} - NOTE: Could be an empty array.
+   */
+  get morphs() {
+    const morphs = this.items.filter((item) => item.type === "morph") || [];
+    console.log('EPactor getter morphs() morphs: ', morphs);
+    return morphs;
+  }
+
+  /**
+   * Does the actor have an active morph?
+   *
+   * Implies that morphs getter will return a non-empty array of morphs, and getMorphById() will return a morph.
+   *
+   * @returns {boolean}
+   */
+  hasMorph() {
+    return !! this._activeMorphId;
+  }
+
+  /**
+   * Creates a brand new empty EPitem of type "morph" in this actor's item collection.
+   *
+   * @returns {Promise<Epitem>}
+   */
+  async createMorph() {
+    const newMorphName = game.i18n.localize('ep2e.morph.currentMorph.morphList.placeholder');
+    const newMorphs = await this.createEmbeddedDocuments("Item", [{ type: "morph", name: newMorphName}], {render: true});
+    return newMorphs[0];
+  }
+
+  /**
+   * Switches the active Morph to another morph in the actor's inventory.
+   *
+   * This method ensures that the old morph's traits/flaws/ware's ActiveEffects are removed from the actor, and that
+   * the new morph's traits/flaws/ware's ActiveEffects are added to the actor.
+   *
+   * @param {String} newMorphId - the _id of the morph to become the new active morph.
+   *
+   * @returns {Promise<EPitem>}
+   */
+  async switchMorph(newMorphId) {
+    console.log('EPactor.switchMorph() newMorphId: ', newMorphId);
+    const effUpdateData=[];
+    //browses through ALL effects and identifies, whether they are bound to an item or not
+    for (let effectScan of this.effects){
+      if (effectScan.origin){
+
+        /*Workaround fromUuid. Currently not needed - just in case fromUuid changes in the future/will become deactivated during an unstable dev release
+        let Uuid = (effectScan.origin).split(".");
+        let parentItem = actor.items.get(Uuid[3]);
+        */
+
+        let parentItem = await fromUuid(effectScan.origin)
+
+        if (parentItem.system.boundTo){
+
+
+          //If a found item is bound to the currently active morph it gets prepared to be activated
+          if (parentItem.system.boundTo === newMorphId) {
+            effUpdateData.push({
+              "_id" : effectScan._id,
+              disabled: false
+            });
+          }
+          //If a found item is NOT bound to the currently active morph it gets prepared to be DEactivated
+          else {
+            effUpdateData.push({
+              "_id" : effectScan._id,
+              disabled: true
+            });
+          }
+        }
+      }
+    }
+    if (effUpdateData.length) {
+      //This pushes the updated data into the effect
+      await this.updateEmbeddedDocuments("ActiveEffect", effUpdateData);
+    }
+    return this.update({'system.activeMorphId': newMorphId}, {render: true});
+  }
+
+  /**
+   * @inheritDoc
+   *
+   * Pulls active morph form data from actor sheet form data and applies it to the active Morph item.
+   */
+  async update(data={}, context={}) {
+    console.log('EPactor.update() data: ', data);
+    console.log('EPactor.update() context: ', context);
+    const morphData = this.gatherActiveMorphDataFromForm(data);
+    if (morphData) {
+      console.log('EPactor.update() morphData: ', morphData);
+      const activeMorphDocuments = [foundry.utils.mergeObject({_id: this.activeMorphId}, morphData)];
+      console.log('EPactor.update() activeMorphDocuments: ', activeMorphDocuments);
+      await this.updateEmbeddedDocuments("Item", activeMorphDocuments);
+      // Do we need to remove the `activeMorph*` properties from the `data` object? I think they are discarded
+      // by super classes update() function because the properties don't exist in the actor template/schema.
+    }
+    return super.update(data, context);
+  }
+
+  /**
+   * Gathers active morph form data from submitted data on actor sheet.
+   *
+   * @param {*} data
+   * @returns {*}
+   */
+  gatherActiveMorphDataFromForm(data) {
+    const expandedData = foundry.utils.expandObject(data);
+    console.log('EPactor.gatherActiveMorphDataFromForm() data: ', data);
+    console.log('EPactor.gatherActiveMorphDataFromForm() expandedData: ', expandedData);
+    return expandedData?.activeMorph;
+  }
+
+  /**
    * Prepare Character type specific data
    */
   _prepareCharacterData(actorModel) {
@@ -182,13 +378,15 @@ export default class EPactor extends Actor {
     actorModel.initiative.display = "1d6 + " + (actorModel.initiative.value - eval(actorModel.mods.manualIniMod ? actorModel.mods.manualIniMod : 0))
   }
 
-  _calculatePhysicalHealth(actorModel, chiMultiplier){
+  _calculatePhysicalHealth(actorModel, morphData, chiMultiplier){
     
     //Calculating WT & DR
 
+    const { dur: morphDur = 0, type: morphType = 'synth' } = morphData;
+
     //NPCs & Goons only
     if(this.type === 'npc' || this.type === 'goon') {
-      actorModel.health.physical.max = (actorModel.bodies.morph1.dur) + eval(actorModel.mods.durmod); // only one morph for npcs
+      actorModel.health.physical.max = (morphDur) + eval(actorModel.mods.durmod);
       actorModel.physical.wt = Math.round(actorModel.health.physical.max / 5);
       actorModel.physical.dr = Math.round(actorModel.health.physical.max * eclipsephase.damageRatingMultiplier[actorModel.bodyType.value]);
       actorModel.health.death.max = actorModel.physical.dr - actorModel.health.physical.max ? actorModel.physical.dr - actorModel.health.physical.max : 0;
@@ -212,13 +410,12 @@ export default class EPactor extends Actor {
     //Characters
     else{
       if(this.type === "character") {
-        let morph = actorModel.bodies[actorModel.bodies.activeMorph];
-        actorModel.health.physical.max = Number(morph.dur) + eval(actorModel.mods.durmod) + (actorModel.mods.durChiMod ? (eval(actorModel.mods.durChiMod)*chiMultiplier) : 0) ? Number(morph.dur) + eval(actorModel.mods.durmod) + (actorModel.mods.durChiMod ? (eval(actorModel.mods.durChiMod)*chiMultiplier) : 0) : 0;
+        actorModel.health.physical.max = Number(morphDur) + eval(actorModel.mods.durmod) + (actorModel.mods.durChiMod ? (eval(actorModel.mods.durChiMod)*chiMultiplier) : 0) ? Number(morphDur) + eval(actorModel.mods.durmod) + (actorModel.mods.durChiMod ? (eval(actorModel.mods.durChiMod)*chiMultiplier) : 0) : 0;
         actorModel.physical.wt = Math.round(actorModel.health.physical.max / 5);
-        actorModel.physical.dr = Math.round(actorModel.health.physical.max * Number(eclipsephase.damageRatingMultiplier[morph.type])) ? Math.round(actorModel.health.physical.max * Number(eclipsephase.damageRatingMultiplier[morph.type])) : 0;
+        actorModel.physical.dr = Math.round(actorModel.health.physical.max * Number(eclipsephase.damageRatingMultiplier[morphType])) ? Math.round(actorModel.health.physical.max * Number(eclipsephase.damageRatingMultiplier[morphType])) : 0;
         actorModel.health.death.max = actorModel.physical.dr - actorModel.health.physical.max ? actorModel.physical.dr - actorModel.health.physical.max : 0;
         actorModel.health.death.value = actorModel.health.physical.value - actorModel.physical.dr
-        actorModel.bodyType.value = morph.type;
+        actorModel.bodyType.value = morphType;
   
         if (actorModel.health.physical.value < actorModel.health.physical.max){
           actorModel.health.death.value = 0
@@ -235,14 +432,14 @@ export default class EPactor extends Actor {
           actorModel.health.physical.value = actorModel.physical.dr
         }
   
-        this._calculatePools(actorModel, morph, chiMultiplier)
-      }}
+        this._calculatePools(actorModel, morphData, chiMultiplier)
+      }
+    }
     
     //Health bar calculation
     let durabilityContainerWidth = 0
     let deathContainerWidth =  0
 
-    const morph = actorModel.bodies[actorModel.bodies.activeMorph];
     const currentPhysicalDamage = actorModel.health.physical.value;
     const maxPhysicalDamage = actorModel.health.physical.max;
     actorModel.physical.relativePhysicalDamage = Math.round(currentPhysicalDamage*100/maxPhysicalDamage) > 100 ? 100 : Math.round(currentPhysicalDamage*100/maxPhysicalDamage);
@@ -262,7 +459,7 @@ export default class EPactor extends Actor {
       }
     }
     else{
-      if(Number(eclipsephase.damageRatingMultiplier[morph.type]) === 1.5){
+      if(Number(eclipsephase.damageRatingMultiplier[morphType]) === 1.5){
         durabilityContainerWidth = 66.5;
         deathContainerWidth =  33.5;
       }
@@ -307,18 +504,24 @@ export default class EPactor extends Actor {
     actorModel.mental.relativeInsanityDamage = Math.round(currentDeathDamage*100/maxDeathDamage) > 100 ? 100 : Math.round(currentDeathDamage*100/maxDeathDamage);
   }
 
-  _calculatePools(actorModel, morph, chiMultiplier) {
-    actorModel.pools.flex.totalFlex = Number(morph.flex) +
+  _calculatePools(actorModel, morphData, chiMultiplier) {
+    const {flex = 0, insight = 0, moxie = 0, vigor = 0} = morphData;
+    console.log('EPactor._calculatePools() morphData: ', morphData);
+    console.log('EPactor._calculatePools() flex: ', flex);
+    console.log('EPactor._calculatePools() insight: ', insight);
+    console.log('EPactor._calculatePools() moxie: ', moxie);
+    console.log('EPactor._calculatePools() vigor: ', vigor);
+    actorModel.pools.flex.totalFlex = Number(flex) +
       Number(actorModel.ego.egoFlex) +
       eval(actorModel.pools.flex.mod) + 
       (actorModel.pools.flex.chiMod ? (eval(actorModel.pools.flex.chiMod)*chiMultiplier) : 0)
-    actorModel.pools.insight.totalInsight = Number(morph.insight) +
+    actorModel.pools.insight.totalInsight = Number(insight) +
       eval(actorModel.pools.insight.mod) + 
       (actorModel.pools.insight.chiMod ? (eval(actorModel.pools.insight.chiMod)*chiMultiplier) : 0)
-    actorModel.pools.moxie.totalMoxie = Number(morph.moxie) +
+    actorModel.pools.moxie.totalMoxie = Number(moxie) +
       eval(actorModel.pools.moxie.mod) + 
       (actorModel.pools.moxie.chiMod ? (eval(actorModel.pools.moxie.chiMod)*chiMultiplier) : 0)
-    actorModel.pools.vigor.totalVigor = Number(morph.vigor) +
+    actorModel.pools.vigor.totalVigor = Number(vigor) +
       eval(actorModel.pools.vigor.mod) + 
       (actorModel.pools.vigor.chiMod ? (eval(actorModel.pools.vigor.chiMod)*chiMultiplier) : 0)
   }

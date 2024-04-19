@@ -191,6 +191,16 @@
       "flags": {}
     }
   ],
+  "documentTypes": {
+    "Item": {
+      "morph": {
+        "htmlFields": ["description"],
+        "filePathFields": {
+          "img": ["IMAGE"]
+        }
+      }
+    }
+  },
   "gridDistance": 2,
   "gridUnits": "m",
   "primaryTokenAttribute": "system.health.physical",

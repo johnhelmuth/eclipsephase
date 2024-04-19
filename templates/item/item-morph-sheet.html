@@ -1,0 +1,128 @@
+{{!-- Morph Sheet --}}
+<form class="{{cssClass}}" autocomplete="off">
+  <header class="sheet-header">
+    <img class="item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+    <div class="header-fields">
+      <h1 class="charname"><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+    </div>
+  </header>
+  <section class="item-sheet-body flexrow contentBox noMargin">
+    <div>
+      <div class="contentBox" style="background-color: var(--focusBackground);">
+        <div class="flexrow subheader">
+          <h3 class="subheader">{{localize "ep2e.morph.currentMorph.header"}}</h3>
+          <div class="alignRight flexGrowThreeQuarter">
+          
+          </div>
+        </div>
+  
+        <div class="grid grid-3col" style="padding-top: 10px;"> {{!--  padding-top is a hack to compensate for collapsed margin on this div that I can't figure out how to solve. JDH --}}
+          
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.morphType.label"}}</label>
+            <select style="max-width: 100px;" class="selectSpecApt" name="system.type" data-type="String">
+              {{#select item.system.type}}
+              {{#each config.bodyTypes as |bodyType key|}}
+              <option value="{{key}}">{{localize bodyType}}</option>
+              {{/each}} {{/select}}
+            </select>
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.durabilityLabel"}}</label>
+            <input class="input-small" type="number" name="system.dur" value="{{item.system.dur}}" placeholder="0" style="text-align: center"/>
+          </div>
+        </div>
+        <div class="grid grid-3col" style="padding: 5px 8px 5px 8px; background-color: var(--mainBackground);">
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.movement.label1"}}</label>
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.movement.speed"}}:</label>
+            <input class="input-xs" type="number" onFocus="this.select()" name="system.movement1.base" value="{{item.system.movement1.base}}" placeholder="0"/>/
+            <input class="input-xs" type="number" onFocus="this.select()" name="system.movement1.full" value="{{item.system.movement1.full}}" placeholder="0"/>
+            </select>
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.movement.type"}}:</label>
+            <select class="selectSpecApt" style="max-width: 85px;" name="system.movement1.type" data-type="String">
+              {{#select item.system.movement1.type}}
+              {{#each config.moveTypes as |moveType key|}}
+              <option value="{{key}}">{{localize moveType}}</option>
+              {{/each}}
+              {{/select}}
+            </select>
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.movement.label2"}}</label>
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.movement.speed"}}:</label>
+            <input class="input-xs" type="number" onFocus="this.select()" name="system.movement2.base" value="{{item.system.movement2.base}}" placeholder="0"/>/
+            <input class="input-xs" type="number" onFocus="this.select()" name="system.movement2.full" value="{{item.system.movement2.full}}" placeholder="0"/>
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.movement.type"}}:</label>
+            <select class="selectSpecApt" style="max-width: 85px;" name="system.movement2.type" data-type="String">
+              {{#select item.system.movement2.type}}
+              {{#each config.moveTypes as |moveType key|}}
+              <option value="{{key}}">{{localize moveType}}</option>
+              {{/each}}
+              {{/select}}
+            </select>
+          </div>
+        </div>
+        <div class=" grid grid-4col" style="padding: 0 8px 5px 8px;">
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.insightLabel"}}</label>
+            <input class="input-xs" type="number" name="system.insight" value="{{item.system.insight}}" placeholder="0"/>
+            {{#if actor.system.pools.insight.mod}}
+            <label class="resource-label footnote">+{{actor.system.pools.insight.mod}}</label>
+            {{/if}}
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.moxieLabel"}}</label>
+            <input class="input-xs" type="number" name="system.moxie" value="{{item.system.moxie}}" placeholder="0"/>
+            {{#if actor.system.pools.moxie.mod}}
+            <label class="resource-label footnote">+{{actor.system.pools.moxie.mod}}</label>
+            {{/if}}
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.vigorLabel"}}</label>
+            <input class="input-xs" type="number" name="system.vigor" value="{{item.system.vigor}}" placeholder="0"/>
+            {{#if actor.system.pools.vigor.mod}}
+            <label class="resource-label footnote">+{{actor.system.pools.vigor.mod}}</label>
+            {{/if}}
+          </div>
+          <div>
+            <label class="resource-value">{{localize "ep2e.morph.currentMorph.flexLabel"}}</label>
+            <input class="input-xs" type="number" name="system.flex" value="{{item.system.flex}}" placeholder="0"/>
+            {{#if actor.system.pools.flex.mod}}
+            <label class="resource-label footnote">+{{actor.system.pools.flex.mod}}</label>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+    </div>
+    <img class="morph-img" src="{{item.img}}" title="{{item.name}}"/>
+  </section>
+  </div>
+  <div>
+    {{> systems/eclipsephase/templates/actor/partials/morph-traits.html
+    name=item.name
+    morph=item }}
+  </div>
+  <div class="flexrow subheader">
+    <h3 class="subheader">
+      {{localize "ep2e.morph.description"}}
+    </h3>
+    <div class="alignRight flexGrowHalf">
+    </div>
+  </div>
+  {{editor
+      item.system.description
+      target="system.description"
+      button=true
+      owner=owner
+      editable=this.options.editable
+  }}
+</form>
